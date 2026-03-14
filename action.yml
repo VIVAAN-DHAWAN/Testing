@@ -1,0 +1,27 @@
+name: 'AI Code Reviewer'
+description: 'AI-powered code review for Pull Requests'
+inputs:
+  github_token:
+    description: 'GITHUB_TOKEN to interact with PR'
+    required: true
+  openai_api_key:
+    description: 'OpenAI API Key (or compatible API key)'
+    required: true
+  openai_base_url:
+    description: 'OpenAI-compatible Base URL (e.g., OpenRouter)'
+    required: false
+  model:
+    description: 'Model to use'
+    required: false
+    default: 'gpt-4o'
+  review_level:
+    description: 'Review level: light | full'
+    required: false
+    default: 'full'
+  max_files:
+    description: 'Max number of files to review'
+    required: false
+    default: '10'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
