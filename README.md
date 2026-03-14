@@ -17,11 +17,11 @@
 2. **Add your API Key to GitHub Secrets** (`OPENAI_API_KEY`)
 3. **Open a Pull Request!**
 
-## 🛠 Example Workflow
+## 🛠️ Example Workflow
 
 Create `.github/workflows/ai-review.yml`:
 
-\`\`\`yaml
+```yaml
 name: AI Code Review
 on:
   pull_request:
@@ -38,7 +38,7 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           model: gpt-4o
           review_level: full
-\`\`\`
+```
 
 ## ⚙️ Configuration Options
 
