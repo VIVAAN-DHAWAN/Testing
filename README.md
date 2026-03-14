@@ -45,11 +45,53 @@ jobs:
 | Input | Description | Default | Required |
 | --- | --- | --- | --- |
 | `github_token` | `${{ secrets.GITHUB_TOKEN }}` | N/A | **Yes** |
-| `openai_api_key` | Your OpenAI/OpenRouter API key | N/A | **Yes** |
-| `openai_base_url` | Custom Base URL (e.g. OpenRouter) | N/A | No |
-| `model` | AI Model to use | `gpt-4o` | No |
+| `ai_provider` | `openai`, `ollama`, `openrouter`, or `anthropic` | `openai` | No |
+| `openai_api_key` | OpenAI API key | N/A | No (if not using openai) |
+| `anthropic_api_key` | Anthropic API key | N/A | No |
+| `openrouter_api_key` | OpenRouter API key | N/A | No |
+| `base_url` | Custom API Base URL | N/A | No |
+| `ollama_host` | Custom Ollama host URL | `http://localhost:11434` | No |
+| `model` | AI Model to use | Varies | No |
 | `review_level` | `light` or `full` | `full` | No |
 | `max_files` | Maximum files to review | `10` | No |
+
+## 🔌 Provider Examples
+
+### OpenAI
+```yaml
+      - uses: VIVAAN-DHAWAN/ai-code-reviewer@v1
+        with:
+          ai_provider: openai
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-4o
+```
+
+### Anthropic Claude
+```yaml
+      - uses: VIVAAN-DHAWAN/ai-code-reviewer@v1
+        with:
+          ai_provider: anthropic
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-20250514
+```
+
+### OpenRouter (supports 200+ models)
+```yaml
+      - uses: VIVAAN-DHAWAN/ai-code-reviewer@v1
+        with:
+          ai_provider: openrouter
+          openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          model: google/gemini-2.5-flash
+```
+
+### Ollama (fully local, no API key)
+```yaml
+      - uses: VIVAAN-DHAWAN/ai-code-reviewer@v1
+        with:
+          ai_provider: ollama
+          ollama_host: http://YOUR_MACHINE_IP:11434
+          model: llama3
+```
 
 ## 📸 Screenshots
 *(Add a demo GIF or screenshot here showing the PR comments)*

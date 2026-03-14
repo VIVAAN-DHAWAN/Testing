@@ -7,9 +7,21 @@ import { getPRDetails, getPRDiff, postReviewComments, postSummary } from './gith
 async function run() {
   try {
     const token = core.getInput('github_token', { required: true });
-    const apiKey = core.getInput('openai_api_key', { required: true });
-    const baseUrl = core.getInput('openai_base_url') || undefined;
-    const model = core.getInput('model') || 'gpt-4o';
+    
+    const aiProvider = core.getInput('ai_provider') || 'openai';
+    const openaiApiKey = core.getInput('openai_api_key');
+    const anthropicApiKey = core.getInput('anthropic_api_key');
+    const openrouterApiKey = core.getInput('openrouter_api_key');
+    const baseUrl = core.getInput('base_url');
+    const ollamaHost = core.getInput('ollama_host') || 'http://localhost:11434';
+    
+    let model = core.getInput('model');
+    if (!model) {
+      if (aiProvider === 'openai' || aiProvider === 'openrouter') model = 'gpt-4o';
+      if (aiProvider === 'anthropic') model = 'claude-sonnet-4-20250514';
+      if (aiProvider === 'ollama') model = 'llama3';
+    }
+
     const reviewLevel = core.getInput('review_level') || 'full';
     const maxFiles = parseInt(core.getInput('max_files') || '10', 10);
 
@@ -37,7 +49,17 @@ async function run() {
     for (const file of files) {
       if (!file.diff.trim()) continue;
 
-      const review = await getReview(apiKey, baseUrl, model, file.diff, reviewLevel);
+      const review = await getReview({
+        aiProvider,
+        openaiApiKey,
+        anthropicApiKey,
+        openrouterApiKey,
+        baseUrl,
+        ollamaHost,
+        model,
+        diff: file.diff,
+        reviewLevel
+      });
       if (!review) continue;
 
       summaryBody += `### ${file.filename}\n${review.summary}\n\n`;

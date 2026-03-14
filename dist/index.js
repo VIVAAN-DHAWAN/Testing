@@ -35649,13 +35649,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getReview = getReview;
 const openai_1 = __importDefault(__nccwpck_require__(2583));
-async function getReview(apiKey, baseUrl, model, diff, reviewLevel) {
-    try {
-        const client = new openai_1.default({
-            apiKey,
-            baseURL: baseUrl,
-        });
-        const systemPrompt = `You are an expert code reviewer. Review the following code diff and identify:
+async function getReview(opts) {
+    const { aiProvider, openaiApiKey, anthropicApiKey, openrouterApiKey, baseUrl, ollamaHost, model, diff, reviewLevel } = opts;
+    const systemPrompt = `You are an expert code reviewer. Review the following code diff and identify:
 1. Bugs or logic errors
 2. Security vulnerabilities
 3. Performance issues
@@ -35675,11 +35671,63 @@ Return structured JSON matching this schema:
     }
   ]
 }`;
+    const userPrompt = `Review level: ${reviewLevel}\n\nDiff:\n${diff}`;
+    try {
+        if (aiProvider === 'anthropic') {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': anthropicApiKey || '',
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 4096,
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: userPrompt }]
+                })
+            });
+            if (!response.ok) {
+                throw new Error(`Anthropic Error: ${await response.text()}`);
+            }
+            const data = await response.json();
+            const content = data.content[0].text;
+            // Attempt to extract JSON from markdown if needed
+            const jsonStr = content.replace(/```json\n/g, '').replace(/```/g, '').trim();
+            return JSON.parse(jsonStr);
+        }
+        if (aiProvider === 'ollama') {
+            const response = await fetch(`${ollamaHost}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model,
+                    stream: false,
+                    format: 'json',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ]
+                })
+            });
+            if (!response.ok) {
+                throw new Error(`Ollama Error: ${await response.text()}`);
+            }
+            const data = await response.json();
+            return JSON.parse(data.message.content);
+        }
+        // Default: OpenAI or OpenRouter
+        const isOpenRouter = aiProvider === 'openrouter';
+        const client = new openai_1.default({
+            apiKey: isOpenRouter ? openrouterApiKey : openaiApiKey,
+            baseURL: isOpenRouter ? 'https://openrouter.ai/api/v1' : baseUrl,
+        });
         const response = await client.chat.completions.create({
             model,
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Review level: ${reviewLevel}\n\nDiff:\n${diff}` }
+                { role: 'user', content: userPrompt }
             ],
             response_format: { type: 'json_object' }
         });
@@ -35689,7 +35737,7 @@ Return structured JSON matching this schema:
         return JSON.parse(content);
     }
     catch (error) {
-        console.error("AI API Error:", error);
+        console.error(`AI API Error (${aiProvider}):`, error);
         return null;
     }
 }
@@ -35868,9 +35916,21 @@ const github_1 = __nccwpck_require__(9248);
 async function run() {
     try {
         const token = core.getInput('github_token', { required: true });
-        const apiKey = core.getInput('openai_api_key', { required: true });
-        const baseUrl = core.getInput('openai_base_url') || undefined;
-        const model = core.getInput('model') || 'gpt-4o';
+        const aiProvider = core.getInput('ai_provider') || 'openai';
+        const openaiApiKey = core.getInput('openai_api_key');
+        const anthropicApiKey = core.getInput('anthropic_api_key');
+        const openrouterApiKey = core.getInput('openrouter_api_key');
+        const baseUrl = core.getInput('base_url');
+        const ollamaHost = core.getInput('ollama_host') || 'http://localhost:11434';
+        let model = core.getInput('model');
+        if (!model) {
+            if (aiProvider === 'openai' || aiProvider === 'openrouter')
+                model = 'gpt-4o';
+            if (aiProvider === 'anthropic')
+                model = 'claude-sonnet-4-20250514';
+            if (aiProvider === 'ollama')
+                model = 'llama3';
+        }
         const reviewLevel = core.getInput('review_level') || 'full';
         const maxFiles = parseInt(core.getInput('max_files') || '10', 10);
         const context = github.context;
@@ -35892,7 +35952,17 @@ async function run() {
         for (const file of files) {
             if (!file.diff.trim())
                 continue;
-            const review = await (0, ai_1.getReview)(apiKey, baseUrl, model, file.diff, reviewLevel);
+            const review = await (0, ai_1.getReview)({
+                aiProvider,
+                openaiApiKey,
+                anthropicApiKey,
+                openrouterApiKey,
+                baseUrl,
+                ollamaHost,
+                model,
+                diff: file.diff,
+                reviewLevel
+            });
             if (!review)
                 continue;
             summaryBody += `### ${file.filename}\n${review.summary}\n\n`;

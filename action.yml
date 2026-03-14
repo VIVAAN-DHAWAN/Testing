@@ -4,16 +4,29 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN to interact with PR'
     required: true
-  openai_api_key:
-    description: 'OpenAI API Key (or compatible API key)'
-    required: true
-  openai_base_url:
-    description: 'OpenAI-compatible Base URL (e.g., OpenRouter)'
+  ai_provider:
+    description: '"openai" | "ollama" | "openrouter" | "anthropic"'
     required: false
+    default: 'openai'
+  openai_api_key:
+    description: 'OpenAI API Key'
+    required: false
+  anthropic_api_key:
+    description: 'Anthropic API Key'
+    required: false
+  openrouter_api_key:
+    description: 'OpenRouter API Key'
+    required: false
+  base_url:
+    description: 'Custom API base URL'
+    required: false
+  ollama_host:
+    description: 'Ollama host URL'
+    required: false
+    default: 'http://localhost:11434'
   model:
     description: 'Model to use'
     required: false
-    default: 'gpt-4o'
   review_level:
     description: 'Review level: light | full'
     required: false
