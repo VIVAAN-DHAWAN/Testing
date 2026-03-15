@@ -1,5 +1,9 @@
-name: 'AI Code Reviewer'
-description: 'AI-powered code review for Pull Requests'
+name: 'AI Code Reviewer Pro'
+description: 'Automatically review Pull Requests using AI — supports OpenAI, Anthropic, OpenRouter, and local Ollama models'
+author: 'VIVAAN-DHAWAN'
+branding:
+  icon: 'code'
+  color: 'purple'
 inputs:
   github_token:
     description: 'GITHUB_TOKEN to interact with PR'
